@@ -168,16 +168,25 @@ func Request(ctx context.Context, target string, rule poc.Rule, variableMap map[
 			target = targetfull
 		}
 	}
+	target = strings.TrimRight(target, "/")
 
 	// path
 	rule.Request.Path = setVariableMap(strings.TrimSpace(rule.Request.Path), variableMap)
-	if !strings.HasPrefix(rule.Request.Path, "^") {
-		target = strings.TrimRight(target, "/") + rule.Request.Path
-	} else {
-		target = strings.TrimRight(target, "/") + "/" + rule.Request.Path[1:]
+
+	newpath := rule.Request.Path
+	if strings.HasPrefix(rule.Request.Path, "^") {
+		newpath = "/" + rule.Request.Path[1:]
 	}
-	// rule.Request.Path = strings.ReplaceAll(rule.Request.Path, " ", "%20")
-	// rule.Request.Path = strings.ReplaceAll(rule.Request.Path, "+", "%20")
+
+	if !strings.HasPrefix(newpath, "/") {
+		newpath = "/" + newpath
+	}
+
+	newpath = strings.ReplaceAll(newpath, " ", "%20")
+	newpath = strings.ReplaceAll(newpath, "+", "%20")
+	newpath = strings.ReplaceAll(newpath, "#", "%23")
+
+	target = target + newpath
 
 	// body
 	if strings.HasPrefix(strings.ToLower(rule.Request.Headers["Content-Type"]), "multipart/form-Data") && strings.Contains(rule.Request.Body, "\n\n") {
@@ -407,7 +416,14 @@ func simpleRtryHttpGet(target string) ([]byte, int, error) {
 		return []byte(""), 0, errors.New("no target specified")
 	}
 
-	resp, err := RtryNoRedirect.Get(target)
+	req, err := retryablehttp.NewRequest(http.MethodGet, target, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	req.Header.Add("User-Agent", utils.RandomUA())
+
+	resp, err := RtryNoRedirect.Do(req)
 	if err != nil {
 		if resp != nil {
 			resp.Body.Close()
@@ -434,7 +450,14 @@ func simpleRtryRedirectGet(target string) ([]byte, map[string][]string, int, err
 		return []byte(""), nil, 0, errors.New("no target specified")
 	}
 
-	resp, err := RtryRedirect.Get(target)
+	req, err := retryablehttp.NewRequest(http.MethodGet, target, nil)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+
+	req.Header.Add("User-Agent", utils.RandomUA())
+
+	resp, err := RtryRedirect.Do(req)
 	if err != nil {
 		if resp != nil {
 			resp.Body.Close()
@@ -485,7 +508,7 @@ func CheckHttpsAndLives(target string) (string, int) {
 		}
 		return target, -1
 
-	case port == "443":
+	case port == "443" || strings.HasSuffix(port, "443"):
 		_, statusCode, err := simpleRtryHttpGet("https://" + target)
 		if err == nil {
 			return "https://" + target, statusCode
@@ -514,7 +537,7 @@ func ReverseGet(target string) ([]byte, error) {
 	if len(target) == 0 {
 		return []byte(""), errors.New("target not find")
 	}
-	respBody, _, err := simpleRtryHttpGet("https://" + target)
+	respBody, _, err := simpleRtryHttpGet(target)
 	return respBody, err
 }
 
