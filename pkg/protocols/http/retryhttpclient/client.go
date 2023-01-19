@@ -8,7 +8,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptrace"
 	"net/url"
 	"regexp"
@@ -120,12 +119,12 @@ func Init(options *config.Options) (err error) {
 	}
 
 	// follow redirects client
-	clientCookieJar, _ := cookiejar.New(nil)
+	// clientCookieJar, _ := cookiejar.New(nil)
 
 	httpRedirectClient := http.Client{
 		Transport: transport,
 		Timeout:   time.Duration(options.Timeout) * time.Second,
-		Jar:       clientCookieJar,
+		// Jar:       clientCookieJar,
 	}
 
 	RtryRedirect = retryablehttp.NewWithHTTPClient(&httpRedirectClient, retryableHttpOptions)
@@ -135,12 +134,12 @@ func Init(options *config.Options) (err error) {
 	// whitespace
 
 	// disabled follow redirects client
-	clientNoRedirectCookieJar, _ := cookiejar.New(nil)
+	// clientNoRedirectCookieJar, _ := cookiejar.New(nil)
 
 	httpNoRedirectClient := http.Client{
-		Transport:     transport,
-		Timeout:       time.Duration(options.Timeout) * time.Second,
-		Jar:           clientNoRedirectCookieJar,
+		Transport: transport,
+		Timeout:   time.Duration(options.Timeout) * time.Second,
+		// Jar:           clientNoRedirectCookieJar,
 		CheckRedirect: makeCheckRedirectFunc(false, defaultMaxRedirects),
 	}
 
@@ -208,13 +207,13 @@ func Request(ctx context.Context, target string, rule poc.Rule, variableMap map[
 		return err
 	}
 
-	// headers
-	if rule.Request.Method == http.MethodPost && len(rule.Request.Headers["Content-Type"]) == 0 {
-		if rule.Request.Headers == nil {
-			rule.Request.Headers = make(map[string]string)
-		}
-		rule.Request.Headers["Content-Type"] = "application/x-www-form-urlencoded"
-	}
+	// headers (delete @2023.1.10)
+	// if rule.Request.Method == http.MethodPost && len(rule.Request.Headers["Content-Type"]) == 0 {
+	// 	if rule.Request.Headers == nil {
+	// 		rule.Request.Headers = map[string]string{}
+	// 	}
+	// 	rule.Request.Headers["Content-Type"] = "application/x-www-form-urlencoded"
+	// }
 
 	for k, v := range rule.Request.Headers {
 		req.Header.Add(k, setVariableMap(v, variableMap))
@@ -222,6 +221,11 @@ func Request(ctx context.Context, target string, rule poc.Rule, variableMap map[
 
 	if len(req.Header.Get("User-Agent")) == 0 {
 		req.Header.Add("User-Agent", utils.RandomUA())
+	}
+
+	// default post content-type
+	if rule.Request.Method == http.MethodPost && len(req.Header.Get("Content-Type")) == 0 {
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	}
 
 	// latency

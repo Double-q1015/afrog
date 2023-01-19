@@ -4,8 +4,9 @@ info:
   name: UTT 艾泰网络管理系统
   author: zan8in
   severity: info
-  metadata:
-    fofa-query: app="UTT-安全网络管理系统"
+  verified: true
+  description: |
+    fofa-query: "app="UTT-安全网络管理系统""
 
 rules:
   r0:
