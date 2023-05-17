@@ -36,14 +36,13 @@ type Reverse struct {
 
 type Ceye struct {
 	ApiKey string `yaml:"api-key"`
-	Domain string `yaml:"domain`
+	Domain string `yaml:"domain"`
 }
 
 const afrogConfigFilename = "afrog-config.yaml"
-const Version = "2.2.1"
 
 // Create and initialize afrog-config.yaml configuration info
-func New() (*Config, error) {
+func NewConfig() (*Config, error) {
 	if isExistConfigFile() != nil {
 		c := Config{}
 		// c.PocSizeWaitGroup = 25

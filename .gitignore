@@ -13,6 +13,8 @@
 logs
 urls*
 *.txt
+*.html
+*.json
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
@@ -24,6 +26,7 @@ reports
 docs/POCLIST.md*
 
 pocs/afrog-pocs/e-privbox/
+pocs/afrog-pocs/a-private/
 
 /afrog-pocs/
 
