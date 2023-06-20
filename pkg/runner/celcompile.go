@@ -100,6 +100,10 @@ var (
 				decls.NewOverload("faviconHash_stringOrBytes",
 					[]*exprpb.Type{decls.Any},
 					decls.Int)),
+			decls.NewFunction("hexdecode",
+				decls.NewOverload("hexdecode_string",
+					[]*exprpb.Type{decls.String},
+					decls.String)),
 			// random
 			decls.NewFunction("randomInt",
 				decls.NewOverload("randomInt_int_int",
@@ -127,6 +131,10 @@ var (
 			// reverse
 			decls.NewFunction("wait",
 				decls.NewInstanceOverload("reverse_wait_int",
+					[]*exprpb.Type{decls.Any, decls.Int},
+					decls.Bool)),
+			decls.NewFunction("jndi",
+				decls.NewInstanceOverload("reverse_jndi_int",
 					[]*exprpb.Type{decls.Any, decls.Int},
 					decls.Bool)),
 			// other

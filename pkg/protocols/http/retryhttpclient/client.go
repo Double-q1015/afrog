@@ -27,16 +27,16 @@ var (
 	RtryNoRedirectHttpClient *http.Client
 	RtryRedirectHttpClient   *http.Client
 
-	defaultMaxRedirects = 10
-	defaultTimeout      = 20 * time.Second
+	defaultTimeout = 20 * time.Second
+
+	maxDefaultBody int64
 )
 
-const maxDefaultBody = 2 * 1024 * 1024
-
 type Options struct {
-	Proxy   string
-	Timeout int
-	Retries int
+	Proxy           string
+	Timeout         int
+	Retries         int
+	MaxRespBodySize int
 }
 
 func Init(opt *Options) (err error) {
@@ -57,6 +57,8 @@ func Init(opt *Options) (err error) {
 	if RtryRedirect, err = retryablehttp.GetPool(po); err != nil {
 		return err
 	}
+
+	maxDefaultBody = int64(opt.MaxRespBodySize * 1024 * 1024)
 
 	return nil
 }
@@ -462,6 +464,10 @@ func ReverseGet(target string) ([]byte, error) {
 	}
 	respBody, _, err := simpleRtryHttpGet(target)
 	return respBody, err
+}
+
+func Get(target string) ([]byte, int, error) {
+	return simpleRtryHttpGet(target)
 }
 
 func Url2UrlType(u *url.URL) *proto.UrlType {

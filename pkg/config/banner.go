@@ -7,7 +7,7 @@ import (
 	"github.com/zan8in/gologger"
 )
 
-const Version = "2.3.2"
+const Version = "2.5.5"
 
 func ShowBanner(u *upgrade.Upgrade) {
 	gologger.Print().Msgf("\n|\tA F R O G\t>\t%s\t-\t%s\n\n", EngineV(u), PocV(u))
@@ -15,7 +15,7 @@ func ShowBanner(u *upgrade.Upgrade) {
 
 func EngineV(u *upgrade.Upgrade) string {
 	if utils.Compare(u.LastestAfrogVersion, ">", Version) {
-		return Version + " > " + log.LogColor.Red(u.LastestAfrogVersion)
+		return Version + " (" + log.LogColor.Red("outdated") + ")" + " > " + log.LogColor.Red(u.LastestAfrogVersion)
 	}
 	return Version
 }

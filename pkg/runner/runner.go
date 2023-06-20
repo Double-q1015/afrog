@@ -34,9 +34,10 @@ func NewRunner(options *config.Options) (*Runner, error) {
 	runner.engine = NewEngine(options)
 
 	retryhttpclient.Init(&retryhttpclient.Options{
-		Proxy:   options.Proxy,
-		Timeout: options.Timeout,
-		Retries: options.Retries,
+		Proxy:           options.Proxy,
+		Timeout:         options.Timeout,
+		Retries:         options.Retries,
+		MaxRespBodySize: options.MaxRespBodySize,
 	})
 
 	jr, err := report.NewJsonReport(options.Json, options.JsonAll)
@@ -52,7 +53,10 @@ func NewRunner(options *config.Options) (*Runner, error) {
 	runner.Report = report
 
 	if len(runner.options.Target) > 0 {
-		runner.options.Targets.Append(runner.options.Target)
+		for _, t := range runner.options.Target {
+			runner.options.Targets.Append(t)
+		}
+
 	}
 	if len(runner.options.TargetsFile) > 0 {
 		allTargets, err := utils.ReadFileLineByLine(runner.options.TargetsFile)

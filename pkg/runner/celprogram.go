@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -293,6 +294,21 @@ var (
 					return types.Int(utils.Mmh3Hash32(utils.Base64Encode(b)))
 				},
 			},
+			&functions.Overload{
+				Operator: "hexdecode_string",
+				Unary: func(value ref.Val) ref.Val {
+					v, ok := value.(types.String)
+					if !ok {
+						return types.ValOrErr(value, "unexpected type '%v' passed to hexdecode_string", value.Type())
+					}
+					dst := make([]byte, hex.DecodedLen(len(v)))
+					n, err := hex.Decode(dst, []byte(v))
+					if err != nil {
+						return types.ValOrErr(value, "unexpected type '%s' passed to hexdecode_string", err.Error())
+					}
+					return types.String(string(dst[:n]))
+				},
+			},
 			// random
 			&functions.Overload{
 				Operator: "randomInt_int_int",
@@ -354,6 +370,20 @@ var (
 						return types.ValOrErr(rhs, "unexpected type '%v' passed to 'wait'", rhs.Type())
 					}
 					return types.Bool(reverseCheck(reverse, timeout))
+				},
+			},
+			&functions.Overload{
+				Operator: "reverse_jndi_int",
+				Binary: func(lhs ref.Val, rhs ref.Val) ref.Val {
+					reverse, ok := lhs.Value().(*proto.Reverse)
+					if !ok {
+						return types.ValOrErr(lhs, "unexpected type '%v' passed to 'wait'", lhs.Type())
+					}
+					timeout, ok := rhs.Value().(int64)
+					if !ok {
+						return types.ValOrErr(rhs, "unexpected type '%v' passed to 'wait'", rhs.Type())
+					}
+					return types.Bool(jndiCheck(reverse, timeout))
 				},
 			},
 			// other
@@ -497,6 +527,28 @@ func reverseCheck(r *proto.Reverse, timeout int64) bool {
 
 	if bytes.Contains(resp, []byte(`<title>503`)) { // api返回结果不为空
 		return false
+	}
+
+	return false
+}
+
+func jndiCheck(reverse *proto.Reverse, timeout int64) bool {
+	if len(config.ReverseJndi) == 0 && len(config.ReverseApiPort) == 0 {
+		return false
+	}
+
+	time.Sleep(time.Second * time.Duration(timeout))
+
+	urlStr := fmt.Sprintf("http://%s:%s/?api=%s", reverse.Url.Domain, config.ReverseApiPort, reverse.Url.Path[1:])
+
+	resp, err := retryhttpclient.ReverseGet(urlStr)
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(string(resp), "yes") {
+
+		return true
 	}
 
 	return false
